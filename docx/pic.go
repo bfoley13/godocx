@@ -1,8 +1,8 @@
 package docx
 
 import (
-	"github.com/gomutex/godocx/common/units"
-	"github.com/gomutex/godocx/dml"
+	"github.com/bfoley13/godocx/common/units"
+	"github.com/bfoley13/godocx/dml"
 )
 
 type PicMeta struct {

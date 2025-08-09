@@ -5,8 +5,8 @@ import (
 	"encoding/xml"
 	"testing"
 
-	"github.com/gomutex/godocx/internal"
-	"github.com/gomutex/godocx/wml/stypes"
+	"github.com/bfoley13/godocx/internal"
+	"github.com/bfoley13/godocx/wml/stypes"
 )
 
 func TestCell_MarshalXML(t *testing.T) {

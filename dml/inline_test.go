@@ -4,9 +4,9 @@ import (
 	"encoding/xml"
 	"testing"
 
-	"github.com/gomutex/godocx/common/constants"
-	"github.com/gomutex/godocx/dml/dmlct"
-	"github.com/gomutex/godocx/dml/dmlst"
+	"github.com/bfoley13/godocx/common/constants"
+	"github.com/bfoley13/godocx/dml/dmlct"
+	"github.com/bfoley13/godocx/dml/dmlst"
 )
 
 func TestMarshalInline(t *testing.T) {

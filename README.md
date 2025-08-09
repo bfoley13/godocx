@@ -1,7 +1,7 @@
 # Godocx
 
-[![Go CI](https://github.com/gomutex/godocx/actions/workflows/go.yml/badge.svg)](https://github.com/gomutex/godocx/actions/workflows/go.yml) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/gomutex/godocx) [![Go Reference](https://pkg.go.dev/badge/github.com/gomutex/godocx.svg)](https://pkg.go.dev/github.com/gomutex/godocx)
- [![Go Report Card](https://goreportcard.com/badge/github.com/gomutex/godocx)](https://goreportcard.com/report/github.com/gomutex/godocx) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Go CI](https://github.com/bfoley13/godocx/actions/workflows/go.yml/badge.svg)](https://github.com/bfoley13/godocx/actions/workflows/go.yml) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/bfoley13/godocx) [![Go Reference](https://pkg.go.dev/badge/github.com/bfoley13/godocx.svg)](https://pkg.go.dev/github.com/bfoley13/godocx)
+ [![Go Report Card](https://goreportcard.com/badge/github.com/bfoley13/godocx)](https://goreportcard.com/report/github.com/bfoley13/godocx) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 
 <p align="center"><img width="650" src="./godocx.png" alt="Godocx logo"></p>
@@ -11,7 +11,7 @@ Godocx is a library written in pure Go providing a set of functions that allow y
 
 This library needs Go version 1.18 or later. The usage documentation for the godocx can be accessed via the [Godocx Documentation Page](https://gomutex.github.io/godocx). 
 
-In depth, go docs can be seen using go's built-in documentation tool, or online at [go.dev](https://pkg.go.dev/github.com/gomutex/godocx). Please refer the [subpackage docx](https://pkg.go.dev/github.com/gomutex/godocx/docx) for the list of functions that can be used.
+In depth, go docs can be seen using go's built-in documentation tool, or online at [go.dev](https://pkg.go.dev/github.com/bfoley13/godocx). Please refer the [subpackage docx](https://pkg.go.dev/github.com/bfoley13/godocx/docx) for the list of functions that can be used.
 
 
 ## Usage
@@ -20,25 +20,25 @@ Here's a simple example of how you can use Godocx to create and modify DOCX docu
 ## Installation
 Use the godocx in your project
 ```bash
-go get github.com/gomutex/godocx
+go get github.com/bfoley13/godocx
 ```
 
 
 ### Examples
 Explore additional examples and use cases over at GitHub repository dedicated to showcasing the capabilities of Golang Docx:
-https://github.com/gomutex/godocx-examples
+https://github.com/bfoley13/godocx-examples
 
 
 ```go
 // More examples in separate repository
-// https://github.com/gomutex/godocx-examples
+// https://github.com/bfoley13/godocx-examples
 
 package main
 
 import (
 	"log"
 
-	"github.com/gomutex/godocx"
+	"github.com/bfoley13/godocx"
 )
 
 func main() {
@@ -92,7 +92,7 @@ func main() {
 
 This is screenshot of demo document generated from the godocx library. 
 
-![Screenshot of the demo output](https://github.com/gomutex/godocx-examples/raw/main/demo.png)
+![Screenshot of the demo output](https://github.com/bfoley13/godocx-examples/raw/main/demo.png)
 
 
 ## Feature addtion request

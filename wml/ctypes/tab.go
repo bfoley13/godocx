@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/gomutex/godocx/wml/stypes"
+	"github.com/bfoley13/godocx/wml/stypes"
 )
 
 // Custom Tab Stop

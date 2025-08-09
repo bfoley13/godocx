@@ -3,7 +3,7 @@ package docx
 import (
 	"strconv"
 
-	"github.com/gomutex/godocx/common/constants"
+	"github.com/bfoley13/godocx/common/constants"
 )
 
 // addLinkRelation adds a hyperlink relationship to the document's relationships collection.

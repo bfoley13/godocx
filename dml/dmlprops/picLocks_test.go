@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"testing"
 
-	"github.com/gomutex/godocx/dml/dmlst"
+	"github.com/bfoley13/godocx/dml/dmlst"
 )
 
 func TestMarshalPicLocks(t *testing.T) {

@@ -1,4 +1,4 @@
-module github.com/gomutex/godocx
+module github.com/bfoley13/godocx
 
 go 1.18
 

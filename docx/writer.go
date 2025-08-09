@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/gomutex/godocx/common/constants"
+	"github.com/bfoley13/godocx/common/constants"
 )
 
 // Close method is used to close the RootDoc. Currently, it does not perform any specific actions.

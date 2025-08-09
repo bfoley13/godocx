@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gomutex/godocx/internal"
-	"github.com/gomutex/godocx/wml/stypes"
+	"github.com/bfoley13/godocx/internal"
+	"github.com/bfoley13/godocx/wml/stypes"
 )
 
 func TestTableRowHeight_MarshalXML(t *testing.T) {
