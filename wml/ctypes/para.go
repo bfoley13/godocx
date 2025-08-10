@@ -25,8 +25,9 @@ type Paragraph struct {
 }
 
 type ParagraphChild struct {
-	Link *Hyperlink // w:hyperlink
-	Run  *Run       // i.e w:r
+	Link *Hyperlink             // w:hyperlink
+	Run  *Run                   // w:r
+	Sdt  *StructuredDocumentTag // w:sdt - Content Control
 }
 
 type Hyperlink struct {
@@ -84,6 +85,12 @@ func (p Paragraph) MarshalXML(e *xml.Encoder, start xml.StartElement) (err error
 				return err
 			}
 		}
+
+		if cElem.Sdt != nil {
+			if err = cElem.Sdt.MarshalXML(e, xml.StartElement{}); err != nil {
+				return err
+			}
+		}
 	}
 
 	// Closing </w:p> element
@@ -129,6 +136,20 @@ loop:
 				if err = d.DecodeElement(p.Property, &elem); err != nil {
 					return err
 				}
+			case "sdt":
+				sdt := &StructuredDocumentTag{}
+				if err = d.DecodeElement(sdt, &elem); err != nil {
+					return err
+				}
+
+				p.Children = append(p.Children, ParagraphChild{Sdt: sdt})
+			case "hyperlink":
+				link := &Hyperlink{}
+				if err = d.DecodeElement(link, &elem); err != nil {
+					return err
+				}
+
+				p.Children = append(p.Children, ParagraphChild{Link: link})
 			default:
 				if err = d.Skip(); err != nil {
 					return err
