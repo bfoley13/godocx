@@ -91,10 +91,12 @@ type RunChild struct {
 	//Tab Character
 	Tab *Empty `xml:"tab,omitempty"`
 
+	//Complex Field Character
+	FldChar *FieldChar `xml:"fldChar,omitempty"`
+
 	//TODO:
 	// 	w:object    Inline Embedded Object
 	// w:pict    VML Object
-	// w:fldChar    Complex Field Character
 	// w:ruby    Phonetic Guide
 	// w:footnoteReference    Footnote Reference
 	// w:endnoteReference    Endnote Reference
@@ -194,6 +196,24 @@ loop:
 
 				r.Children = append(r.Children, RunChild{
 					Tab: tabElem,
+				})
+			case "fldChar":
+				fldCharElem := &FieldChar{}
+				if err = d.DecodeElement(fldCharElem, &elem); err != nil {
+					return err
+				}
+
+				r.Children = append(r.Children, RunChild{
+					FldChar: fldCharElem,
+				})
+			case "instrText":
+				instrTextElem := &Text{}
+				if err = d.DecodeElement(instrTextElem, &elem); err != nil {
+					return err
+				}
+
+				r.Children = append(r.Children, RunChild{
+					InstrText: instrTextElem,
 				})
 			case "br":
 				br := Break{}
@@ -299,6 +319,8 @@ func (r *Run) MarshalChild(e *xml.Encoder) error {
 			err = child.CarrRtn.MarshalXML(e, xml.StartElement{Name: xml.Name{Local: "w:cr"}})
 		case child.Tab != nil:
 			err = child.Tab.MarshalXML(e, xml.StartElement{Name: xml.Name{Local: "w:tab"}})
+		case child.FldChar != nil:
+			err = child.FldChar.MarshalXML(e, xml.StartElement{Name: xml.Name{Local: "w:fldChar"}})
 		case child.Drawing != nil:
 			err = child.Drawing.MarshalXML(e, xml.StartElement{Name: xml.Name{Local: "w:drawing"}})
 		case child.LastRenPgBrk != nil:
