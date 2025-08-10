@@ -27,3 +27,32 @@ func (p PSize2D) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 	return e.EncodeElement("", start)
 }
+
+func (p *PSize2D) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "cx":
+			if val, err := strconv.ParseUint(attr.Value, 10, 64); err == nil {
+				p.Width = val
+			}
+		case "cy":
+			if val, err := strconv.ParseUint(attr.Value, 10, 64); err == nil {
+				p.Height = val
+			}
+		}
+	}
+
+	// Skip to end element since this is self-closing
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+		if _, ok := token.(xml.EndElement); ok {
+			break
+		}
+	}
+
+	return nil
+}

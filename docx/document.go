@@ -287,3 +287,212 @@ func (rd *RootDoc) replaceInContentControl(sdt *ctypes.StructuredDocumentTag, ol
 
 	return replacements
 }
+
+// ReplaceFields replaces field codes throughout the document based on a map of field codes to replacement values.
+// It searches through all paragraphs in the document body, including within tables and content controls,
+// to find Word fields and replace their results with the provided values.
+//
+// Word fields follow the pattern: begin → instrText → separate → result → end
+// This function identifies fields by their instruction text and replaces the result text.
+//
+// Parameters:
+//   - fieldMap: A map where keys are field codes (e.g., "MERGEFIELD Name", "PAGE") and values are replacement text.
+//
+// Returns:
+//   - int: The total number of field replacements made.
+//
+// Example:
+//
+//	document := godocx.NewDocument()
+//	// Document contains fields like: { MERGEFIELD Name } and { PAGE }
+//	fieldMap := map[string]string{
+//	    "MERGEFIELD Name": "John Doe",
+//	    "PAGE": "42",
+//	}
+//	replacements := document.ReplaceFields(fieldMap)
+func (rd *RootDoc) ReplaceFields(fieldMap map[string]string) int {
+	if len(fieldMap) == 0 || rd.Document == nil || rd.Document.Body == nil {
+		return 0
+	}
+
+	replacements := 0
+
+	for _, child := range rd.Document.Body.Children {
+		if child.Para != nil {
+			replacements += rd.replaceFieldsInParagraph(child.Para, fieldMap)
+		} else if child.Table != nil {
+			replacements += rd.replaceFieldsInTable(child.Table, fieldMap)
+		}
+	}
+
+	return replacements
+}
+
+// replaceFieldsInParagraph replaces fields within a single paragraph
+func (rd *RootDoc) replaceFieldsInParagraph(para *Paragraph, fieldMap map[string]string) int {
+	replacements := 0
+
+	for _, child := range para.ct.Children {
+		if child.Run != nil {
+			replacements += rd.replaceFieldsInRun(child.Run, fieldMap)
+		} else if child.Link != nil {
+			if child.Link.Run != nil {
+				replacements += rd.replaceFieldsInRun(child.Link.Run, fieldMap)
+			}
+		} else if child.Sdt != nil {
+			replacements += rd.replaceFieldsInContentControl(child.Sdt, fieldMap)
+		}
+	}
+
+	return replacements
+}
+
+// replaceFieldsInTable replaces fields within all cells of a table
+func (rd *RootDoc) replaceFieldsInTable(table *Table, fieldMap map[string]string) int {
+	replacements := 0
+
+	for _, rowContent := range table.ct.RowContents {
+		if rowContent.Row != nil {
+			for _, cellContent := range rowContent.Row.Contents {
+				if cellContent.Cell != nil {
+					replacements += rd.replaceFieldsInCell(cellContent.Cell, fieldMap)
+				}
+			}
+		}
+	}
+
+	return replacements
+}
+
+// replaceFieldsInCell replaces fields within a single table cell
+func (rd *RootDoc) replaceFieldsInCell(cell *ctypes.Cell, fieldMap map[string]string) int {
+	replacements := 0
+
+	for _, content := range cell.Contents {
+		if content.Paragraph != nil {
+			replacements += rd.replaceFieldsInCTypeParagraph(content.Paragraph, fieldMap)
+		} else if content.Table != nil {
+			for _, rowContent := range content.Table.RowContents {
+				if rowContent.Row != nil {
+					for _, cellContent := range rowContent.Row.Contents {
+						if cellContent.Cell != nil {
+							replacements += rd.replaceFieldsInCell(cellContent.Cell, fieldMap)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return replacements
+}
+
+// replaceFieldsInCTypeParagraph replaces fields within a ctypes.Paragraph (used within table cells)
+func (rd *RootDoc) replaceFieldsInCTypeParagraph(para *ctypes.Paragraph, fieldMap map[string]string) int {
+	replacements := 0
+
+	for _, child := range para.Children {
+		if child.Run != nil {
+			replacements += rd.replaceFieldsInRun(child.Run, fieldMap)
+		} else if child.Link != nil {
+			if child.Link.Run != nil {
+				replacements += rd.replaceFieldsInRun(child.Link.Run, fieldMap)
+			}
+		}
+	}
+
+	return replacements
+}
+
+// replaceFieldsInContentControl replaces fields within a content control
+func (rd *RootDoc) replaceFieldsInContentControl(sdt *ctypes.StructuredDocumentTag, fieldMap map[string]string) int {
+	replacements := 0
+
+	if sdt.Content == nil {
+		return replacements
+	}
+
+	for _, child := range sdt.Content.Children {
+		if child.Run != nil {
+			replacements += rd.replaceFieldsInRun(child.Run, fieldMap)
+		} else if child.Paragraph != nil {
+			replacements += rd.replaceFieldsInCTypeParagraph(child.Paragraph, fieldMap)
+		} else if child.Table != nil {
+			for _, rowContent := range child.Table.RowContents {
+				if rowContent.Row != nil {
+					for _, cellContent := range rowContent.Row.Contents {
+						if cellContent.Cell != nil {
+							replacements += rd.replaceFieldsInCell(cellContent.Cell, fieldMap)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return replacements
+}
+
+// replaceFieldsInRun replaces fields within a single run by analyzing field patterns
+func (rd *RootDoc) replaceFieldsInRun(run *ctypes.Run, fieldMap map[string]string) int {
+	replacements := 0
+	
+	// Find field sequences within this run
+	fieldState := "none" // none, begin, instrText, separate, result
+	var currentFieldCode strings.Builder
+	var resultIndices []int // indices of text elements that contain field results
+
+	for i, child := range run.Children {
+		if child.FldChar != nil {
+			switch child.FldChar.FldCharType.Val {
+			case stypes.FldCharTypeBegin:
+				fieldState = "begin"
+				currentFieldCode.Reset()
+				resultIndices = []int{}
+			case stypes.FldCharTypeSeparate:
+				fieldState = "separate"
+				resultIndices = []int{}
+			case stypes.FldCharTypeEnd:
+				if fieldState == "separate" {
+					// We have a complete field, try to replace it
+					fieldCode := strings.TrimSpace(currentFieldCode.String())
+					if replacement, exists := fieldMap[fieldCode]; exists {
+						// Replace all result text elements with the replacement
+						rd.replaceFieldResult(run, resultIndices, replacement)
+						replacements++
+					}
+				}
+				fieldState = "none"
+				currentFieldCode.Reset()
+				resultIndices = []int{}
+			}
+		} else if child.InstrText != nil && (fieldState == "begin" || fieldState == "instrText") {
+			fieldState = "instrText"
+			currentFieldCode.WriteString(child.InstrText.Text)
+		} else if child.Text != nil && fieldState == "separate" {
+			resultIndices = append(resultIndices, i)
+		}
+	}
+
+	return replacements
+}
+
+// replaceFieldResult replaces the text elements at the given indices with the replacement text
+func (rd *RootDoc) replaceFieldResult(run *ctypes.Run, textIndices []int, replacement string) {
+	if len(textIndices) == 0 {
+		return
+	}
+
+	// Replace the first text element with the replacement text
+	if textIndices[0] < len(run.Children) && run.Children[textIndices[0]].Text != nil {
+		run.Children[textIndices[0]].Text.Text = replacement
+	}
+
+	// Clear the remaining text elements (in reverse order to avoid index shifting)
+	for i := len(textIndices) - 1; i > 0; i-- {
+		idx := textIndices[i]
+		if idx < len(run.Children) && run.Children[idx].Text != nil {
+			run.Children[idx].Text.Text = ""
+		}
+	}
+}

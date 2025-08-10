@@ -73,3 +73,49 @@ func (s Spacing) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 	return e.EncodeElement("", start)
 }
+
+func (s *Spacing) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "before":
+			if val, err := strconv.ParseUint(attr.Value, 10, 64); err == nil {
+				s.Before = &val
+			}
+		case "after":
+			if val, err := strconv.ParseUint(attr.Value, 10, 64); err == nil {
+				s.After = &val
+			}
+		case "beforeLines":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				s.BeforeLines = &val
+			}
+		case "beforeAutospacing":
+			val := stypes.OnOff(attr.Value)
+			s.BeforeAutospacing = &val
+		case "afterAutospacing":
+			val := stypes.OnOff(attr.Value)
+			s.AfterAutospacing = &val
+		case "line":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				s.Line = &val
+			}
+		case "lineRule":
+			val := stypes.LineSpacingRule(attr.Value)
+			s.LineRule = &val
+		}
+	}
+
+	// Skip to end element since spacing is self-closing
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+		if _, ok := token.(xml.EndElement); ok {
+			break
+		}
+	}
+
+	return nil
+}

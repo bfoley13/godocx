@@ -135,3 +135,39 @@ func isEqualInd(a, b Indent) error {
 
 	return nil
 }
+
+func TestIndent_RoundTrip(t *testing.T) {
+	original := Indent{
+		Left:           internal.ToPtr(720),
+		LeftChars:      internal.ToPtr(50),
+		Right:          internal.ToPtr(360),
+		RightChars:     internal.ToPtr(25),
+		Hanging:        internal.ToPtr(uint64(240)),
+		HangingChars:   internal.ToPtr(10),
+		FirstLine:      internal.ToPtr(uint64(480)),
+		FirstLineChars: internal.ToPtr(20),
+	}
+
+	// Marshal to XML
+	var buf strings.Builder
+	encoder := xml.NewEncoder(&buf)
+	start := xml.StartElement{Name: xml.Name{Local: "w:ind"}}
+	err := original.MarshalXML(encoder, start)
+	if err != nil {
+		t.Fatalf("Error marshaling: %v", err)
+	}
+	encoder.Flush()
+
+	// Unmarshal back
+	var unmarshaled Indent
+	err = xml.Unmarshal([]byte(buf.String()), &unmarshaled)
+	if err != nil {
+		t.Fatalf("Error unmarshaling: %v", err)
+	}
+
+	// Use the existing utility function to compare
+	err = isEqualInd(original, unmarshaled)
+	if err != nil {
+		t.Errorf("Round-trip mismatch: %v", err)
+	}
+}

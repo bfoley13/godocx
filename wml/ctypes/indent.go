@@ -56,3 +56,56 @@ func (i Indent) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 	return e.EncodeElement("", start)
 }
+
+func (i *Indent) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "left":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				i.Left = &val
+			}
+		case "leftChars":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				i.LeftChars = &val
+			}
+		case "right":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				i.Right = &val
+			}
+		case "rightChars":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				i.RightChars = &val
+			}
+		case "hanging":
+			if val, err := strconv.ParseUint(attr.Value, 10, 64); err == nil {
+				i.Hanging = &val
+			}
+		case "hangingChars":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				i.HangingChars = &val
+			}
+		case "firstLine":
+			if val, err := strconv.ParseUint(attr.Value, 10, 64); err == nil {
+				i.FirstLine = &val
+			}
+		case "firstLineChars":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				i.FirstLineChars = &val
+			}
+		}
+	}
+
+	// Skip to end element since indent is self-closing
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+		if _, ok := token.(xml.EndElement); ok {
+			break
+		}
+	}
+
+	return nil
+}

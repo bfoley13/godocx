@@ -84,6 +84,40 @@ func (p Pic) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.EncodeToken(xml.EndElement{Name: start.Name})
 }
 
+func (p *Pic) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse child elements
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+
+		switch elem := token.(type) {
+		case xml.StartElement:
+			switch elem.Name.Local {
+			case "nvPicPr":
+				if err := d.DecodeElement(&p.NonVisualPicProp, &elem); err != nil {
+					return err
+				}
+			case "blipFill":
+				if err := d.DecodeElement(&p.BlipFill, &elem); err != nil {
+					return err
+				}
+			case "spPr":
+				if err := d.DecodeElement(&p.PicShapeProp, &elem); err != nil {
+					return err
+				}
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
+}
+
 type TransformGroup struct {
 	Extent *dmlct.PSize2D `xml:"ext,omitempty"`
 	Offset *Offset        `xml:"off,omitempty"`
@@ -130,6 +164,38 @@ func (t TransformGroup) MarshalXML(e *xml.Encoder, start xml.StartElement) error
 	return e.EncodeToken(xml.EndElement{Name: start.Name})
 }
 
+func (t *TransformGroup) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse child elements
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+
+		switch elem := token.(type) {
+		case xml.StartElement:
+			switch elem.Name.Local {
+			case "off":
+				t.Offset = &Offset{}
+				if err := d.DecodeElement(t.Offset, &elem); err != nil {
+					return err
+				}
+			case "ext":
+				t.Extent = &dmlct.PSize2D{}
+				if err := d.DecodeElement(t.Extent, &elem); err != nil {
+					return err
+				}
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
+}
+
 type Offset struct {
 	X uint64 `xml:"x,attr,omitempty"`
 	Y uint64 `xml:"y,attr,omitempty"`
@@ -148,6 +214,34 @@ func (o Offset) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	}
 
 	return e.EncodeToken(xml.EndElement{Name: start.Name})
+}
+
+func (o *Offset) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "x":
+			if val, err := strconv.ParseUint(attr.Value, 10, 64); err == nil {
+				o.X = val
+			}
+		case "y":
+			if val, err := strconv.ParseUint(attr.Value, 10, 64); err == nil {
+				o.Y = val
+			}
+		}
+	}
+
+	// Skip any content and read to end
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+		if _, ok := token.(xml.EndElement); ok {
+			break
+		}
+	}
+	return nil
 }
 
 type PresetGeometry struct {

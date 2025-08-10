@@ -181,3 +181,129 @@ func (a *Anchor) MarshalWrap(e *xml.Encoder) error {
 	}
 	return nil
 }
+
+func (a *Anchor) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "simplePos":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				a.SimplePosAttr = &val
+			}
+		case "distT":
+			if val, err := strconv.ParseUint(attr.Value, 10, 32); err == nil {
+				a.DistT = uint(val)
+			}
+		case "distB":
+			if val, err := strconv.ParseUint(attr.Value, 10, 32); err == nil {
+				a.DistB = uint(val)
+			}
+		case "distL":
+			if val, err := strconv.ParseUint(attr.Value, 10, 32); err == nil {
+				a.DistL = uint(val)
+			}
+		case "distR":
+			if val, err := strconv.ParseUint(attr.Value, 10, 32); err == nil {
+				a.DistR = uint(val)
+			}
+		case "relativeHeight":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				a.RelativeHeight = val
+			}
+		case "layoutInCell":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				a.LayoutInCell = val
+			}
+		case "behindDoc":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				a.BehindDoc = val
+			}
+		case "locked":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				a.Locked = val
+			}
+		case "allowOverlap":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				a.AllowOverlap = val
+			}
+		case "hidden":
+			if val, err := strconv.Atoi(attr.Value); err == nil {
+				a.Hidden = &val
+			}
+		}
+	}
+
+	// Parse child elements
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+
+		switch elem := token.(type) {
+		case xml.StartElement:
+			switch elem.Name.Local {
+			case "simplePos":
+				if err := d.DecodeElement(&a.SimplePos, &elem); err != nil {
+					return err
+				}
+			case "positionH":
+				if err := d.DecodeElement(&a.PositionH, &elem); err != nil {
+					return err
+				}
+			case "positionV":
+				if err := d.DecodeElement(&a.PositionV, &elem); err != nil {
+					return err
+				}
+			case "extent":
+				if err := d.DecodeElement(&a.Extent, &elem); err != nil {
+					return err
+				}
+			case "effectExtent":
+				a.EffectExtent = &EffectExtent{}
+				if err := d.DecodeElement(a.EffectExtent, &elem); err != nil {
+					return err
+				}
+			case "wrapNone":
+				a.WrapNone = &WrapNone{}
+				if err := d.DecodeElement(a.WrapNone, &elem); err != nil {
+					return err
+				}
+			case "wrapSquare":
+				a.WrapSquare = &WrapSquare{}
+				if err := d.DecodeElement(a.WrapSquare, &elem); err != nil {
+					return err
+				}
+			case "wrapThrough":
+				a.WrapThrough = &WrapThrough{}
+				if err := d.DecodeElement(a.WrapThrough, &elem); err != nil {
+					return err
+				}
+			case "wrapTopAndBottom":
+				a.WrapTopBtm = &WrapTopBtm{}
+				if err := d.DecodeElement(a.WrapTopBtm, &elem); err != nil {
+					return err
+				}
+			case "docPr":
+				if err := d.DecodeElement(&a.DocProp, &elem); err != nil {
+					return err
+				}
+			case "cNvGraphicFramePr":
+				a.CNvGraphicFramePr = &NonVisualGraphicFrameProp{}
+				if err := d.DecodeElement(a.CNvGraphicFramePr, &elem); err != nil {
+					return err
+				}
+			case "graphic":
+				if err := d.DecodeElement(&a.Graphic, &elem); err != nil {
+					return err
+				}
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
+}

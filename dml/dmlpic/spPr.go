@@ -92,3 +92,42 @@ func (p PicShapeProp) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 	return e.EncodeToken(xml.EndElement{Name: start.Name})
 }
+
+func (p *PicShapeProp) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "bwMode" {
+			p.BwMode = &attr.Value
+		}
+	}
+
+	// Parse child elements
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+
+		switch elem := token.(type) {
+		case xml.StartElement:
+			switch elem.Name.Local {
+			case "xfrm":
+				p.TransformGroup = &TransformGroup{}
+				if err := d.DecodeElement(p.TransformGroup, &elem); err != nil {
+					return err
+				}
+			case "prstGeom":
+				p.PresetGeometry = &PresetGeometry{}
+				if err := d.DecodeElement(p.PresetGeometry, &elem); err != nil {
+					return err
+				}
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
+}
