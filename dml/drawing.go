@@ -16,6 +16,7 @@ const (
 type Drawing struct {
 	Inline []Inline  `xml:"inline,omitempty"`
 	Anchor []*Anchor `xml:"anchor,omitempty"`
+	Shape  []*Shape  `xml:"shape,omitempty"`
 }
 
 func (dr *Drawing) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -43,6 +44,13 @@ loop:
 				}
 
 				dr.Inline = append(dr.Inline, il)
+			case xml.Name{Space: "urn:schemas-microsoft-com:vml", Local: "shape"}:
+				shape := &Shape{}
+				if err = d.DecodeElement(shape, &elem); err != nil {
+					return err
+				}
+
+				dr.Shape = append(dr.Shape, shape)
 			default:
 				if err = d.Skip(); err != nil {
 					return err
@@ -71,6 +79,12 @@ func (dr Drawing) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	}
 
 	for _, data := range dr.Inline {
+		if err = data.MarshalXML(e, xml.StartElement{}); err != nil {
+			return err
+		}
+	}
+
+	for _, data := range dr.Shape {
 		if err = data.MarshalXML(e, xml.StartElement{}); err != nil {
 			return err
 		}

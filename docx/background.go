@@ -38,3 +38,35 @@ func (b Background) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	}
 	return e.EncodeToken(start.End())
 }
+
+func (b *Background) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes - handle both with and without namespace prefixes
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "color":
+			value := attr.Value
+			b.Color = &value
+		case "themeColor":
+			themeColor := stypes.ThemeColor(attr.Value)
+			b.ThemeColor = &themeColor
+		case "themeTint":
+			value := attr.Value
+			b.ThemeTint = &value
+		case "themeShade":
+			value := attr.Value
+			b.ThemeShade = &value
+		}
+	}
+
+	// Skip any content and read to end element
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+		if _, ok := token.(xml.EndElement); ok {
+			break
+		}
+	}
+	return nil
+}

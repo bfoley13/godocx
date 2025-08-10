@@ -45,3 +45,34 @@ func (c Color) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 	return e.EncodeElement("", start)
 }
+
+func (c *Color) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "val":
+			c.Val = attr.Value
+		case "themeColor":
+			themeColor := stypes.ThemeColor(attr.Value)
+			c.ThemeColor = &themeColor
+		case "themeTint":
+			value := attr.Value
+			c.ThemeTint = &value
+		case "themeShade":
+			value := attr.Value
+			c.ThemeShade = &value
+		}
+	}
+
+	// Skip any content and read to end element
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+		if _, ok := token.(xml.EndElement); ok {
+			break
+		}
+	}
+	return nil
+}

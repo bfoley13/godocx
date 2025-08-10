@@ -21,3 +21,24 @@ func (b Blip) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 	return e.EncodeToken(xml.EndElement{Name: start.Name})
 }
+
+func (b *Blip) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "embed" || (attr.Name.Space == "http://schemas.openxmlformats.org/officeDocument/2006/relationships" && attr.Name.Local == "embed") {
+			b.EmbedID = attr.Value
+		}
+	}
+
+	// Skip any content and read to end
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+		if _, ok := token.(xml.EndElement); ok {
+			break
+		}
+	}
+	return nil
+}

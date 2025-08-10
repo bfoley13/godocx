@@ -25,3 +25,30 @@ func (n NonVisualGraphicFrameProp) MarshalXML(e *xml.Encoder, start xml.StartEle
 
 	return e.EncodeToken(xml.EndElement{Name: start.Name})
 }
+
+func (n *NonVisualGraphicFrameProp) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse child elements
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+
+		switch elem := token.(type) {
+		case xml.StartElement:
+			switch elem.Name.Local {
+			case "graphicFrameLocks":
+				n.GraphicFrameLocks = &GraphicFrameLocks{}
+				if err := d.DecodeElement(n.GraphicFrameLocks, &elem); err != nil {
+					return err
+				}
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
+}

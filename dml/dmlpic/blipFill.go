@@ -3,6 +3,7 @@ package dmlpic
 import (
 	"encoding/xml"
 	"fmt"
+	"strconv"
 
 	"github.com/bfoley13/godocx/dml/dmlct"
 	"github.com/bfoley13/godocx/dml/shapes"
@@ -87,4 +88,93 @@ func (f FillModeProps) MarshalXML(e *xml.Encoder, start xml.StartElement) error 
 	}
 
 	return nil
+}
+
+func (b *BlipFill) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse attributes
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "dpi":
+			if val, err := strconv.ParseUint(attr.Value, 10, 32); err == nil {
+				dpi := uint32(val)
+				b.DPI = &dpi
+			}
+		case "rotWithShape":
+			if val, err := strconv.ParseBool(attr.Value); err == nil {
+				b.RotWithShape = &val
+			}
+		}
+	}
+
+	// Parse child elements
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+
+		switch elem := token.(type) {
+		case xml.StartElement:
+			switch elem.Name.Local {
+			case "blip":
+				b.Blip = &Blip{}
+				if err := d.DecodeElement(b.Blip, &elem); err != nil {
+					return err
+				}
+			case "srcRect":
+				b.SrcRect = &dmlct.RelativeRect{}
+				if err := d.DecodeElement(b.SrcRect, &elem); err != nil {
+					return err
+				}
+			case "stretch":
+				b.FillModeProps.Stretch = &shapes.Stretch{}
+				if err := d.DecodeElement(b.FillModeProps.Stretch, &elem); err != nil {
+					return err
+				}
+			case "tile":
+				b.FillModeProps.Tile = &shapes.Tile{}
+				if err := d.DecodeElement(b.FillModeProps.Tile, &elem); err != nil {
+					return err
+				}
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
+}
+
+func (f *FillModeProps) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// Parse child elements
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return err
+		}
+
+		switch elem := token.(type) {
+		case xml.StartElement:
+			switch elem.Name.Local {
+			case "stretch":
+				f.Stretch = &shapes.Stretch{}
+				if err := d.DecodeElement(f.Stretch, &elem); err != nil {
+					return err
+				}
+			case "tile":
+				f.Tile = &shapes.Tile{}
+				if err := d.DecodeElement(f.Tile, &elem); err != nil {
+					return err
+				}
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
 }
