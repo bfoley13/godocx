@@ -329,19 +329,31 @@ func (rd *RootDoc) ReplaceFields(fieldMap map[string]string) int {
 }
 
 // replaceFieldsInParagraph replaces fields within a single paragraph
+// This function handles fields that may span across multiple runs
 func (rd *RootDoc) replaceFieldsInParagraph(para *Paragraph, fieldMap map[string]string) int {
 	replacements := 0
 
-	for _, child := range para.ct.Children {
+	// Collect all runs from the paragraph for field processing
+	var runs []*ctypes.Run
+	var runIndices []int
+
+	for i, child := range para.ct.Children {
 		if child.Run != nil {
-			replacements += rd.replaceFieldsInRun(child.Run, fieldMap)
+			runs = append(runs, child.Run)
+			runIndices = append(runIndices, i)
 		} else if child.Link != nil {
 			if child.Link.Run != nil {
-				replacements += rd.replaceFieldsInRun(child.Link.Run, fieldMap)
+				runs = append(runs, child.Link.Run)
+				runIndices = append(runIndices, i)
 			}
 		} else if child.Sdt != nil {
 			replacements += rd.replaceFieldsInContentControl(child.Sdt, fieldMap)
 		}
+	}
+
+	// Process fields across all runs in the paragraph
+	if len(runs) > 0 {
+		replacements += rd.replaceFieldsAcrossRuns(runs, fieldMap)
 	}
 
 	return replacements
@@ -388,17 +400,26 @@ func (rd *RootDoc) replaceFieldsInCell(cell *ctypes.Cell, fieldMap map[string]st
 }
 
 // replaceFieldsInCTypeParagraph replaces fields within a ctypes.Paragraph (used within table cells)
+// This function handles fields that may span across multiple runs
 func (rd *RootDoc) replaceFieldsInCTypeParagraph(para *ctypes.Paragraph, fieldMap map[string]string) int {
 	replacements := 0
 
+	// Collect all runs from the paragraph for field processing
+	var runs []*ctypes.Run
+
 	for _, child := range para.Children {
 		if child.Run != nil {
-			replacements += rd.replaceFieldsInRun(child.Run, fieldMap)
+			runs = append(runs, child.Run)
 		} else if child.Link != nil {
 			if child.Link.Run != nil {
-				replacements += rd.replaceFieldsInRun(child.Link.Run, fieldMap)
+				runs = append(runs, child.Link.Run)
 			}
 		}
+	}
+
+	// Process fields across all runs in the paragraph
+	if len(runs) > 0 {
+		replacements += rd.replaceFieldsAcrossRuns(runs, fieldMap)
 	}
 
 	return replacements
@@ -433,10 +454,96 @@ func (rd *RootDoc) replaceFieldsInContentControl(sdt *ctypes.StructuredDocumentT
 	return replacements
 }
 
+// replaceFieldsAcrossRuns processes fields that may span across multiple runs within a paragraph
+func (rd *RootDoc) replaceFieldsAcrossRuns(runs []*ctypes.Run, fieldMap map[string]string) int {
+	replacements := 0
+
+	// Track field state across all runs
+	fieldState := "none" // none, begin, instrText, separate, result
+	var currentFieldCode strings.Builder
+	var resultElements []fieldResultElement // stores references to text elements containing field results
+
+	// Iterate through all runs and their children to find field sequences
+	for runIdx, run := range runs {
+		for childIdx, child := range run.Children {
+			if child.FldChar != nil {
+				switch child.FldChar.FldCharType.Val {
+				case stypes.FldCharTypeBegin:
+					currentFieldCode.Reset()
+					resultElements = []fieldResultElement{}
+					fieldState = "begin"
+
+					if child.FldChar.FFData != nil && child.FldChar.FFData.TextInput != nil && child.FldChar.FFData.TextInput.Default != nil {
+						if _, exists := fieldMap[strings.TrimSpace(child.FldChar.FFData.TextInput.Default.Val)]; exists {
+							currentFieldCode.WriteString(child.FldChar.FFData.TextInput.Default.Val)
+						}
+					}
+				case stypes.FldCharTypeSeparate:
+					fieldState = "separate"
+					resultElements = []fieldResultElement{}
+				case stypes.FldCharTypeEnd:
+					if fieldState == "separate" {
+						// We have a complete field, try to replace it
+						fieldCode := strings.TrimSpace(currentFieldCode.String())
+						if replacement, exists := fieldMap[fieldCode]; exists {
+							// Replace all result text elements with the replacement
+							rd.replaceFieldResultAcrossRuns(resultElements, replacement)
+							replacements++
+						}
+					}
+					fieldState = "none"
+					currentFieldCode.Reset()
+					resultElements = []fieldResultElement{}
+				}
+			} else if child.InstrText != nil && (fieldState == "begin" || fieldState == "instrText") {
+				fieldState = "instrText"
+				currentFieldCode.WriteString(child.InstrText.Text)
+			} else if child.Text != nil && fieldState == "separate" {
+				resultElements = append(resultElements, fieldResultElement{
+					run:      run,
+					runIdx:   runIdx,
+					childIdx: childIdx,
+				})
+			}
+		}
+	}
+
+	return replacements
+}
+
+// fieldResultElement stores a reference to a text element within a field result
+type fieldResultElement struct {
+	run      *ctypes.Run
+	runIdx   int
+	childIdx int
+}
+
+// replaceFieldResultAcrossRuns replaces field result text elements across multiple runs
+func (rd *RootDoc) replaceFieldResultAcrossRuns(elements []fieldResultElement, replacement string) {
+	if len(elements) == 0 {
+		return
+	}
+
+	// Replace the first text element with the replacement text
+	if elements[0].childIdx < len(elements[0].run.Children) &&
+		elements[0].run.Children[elements[0].childIdx].Text != nil {
+		elements[0].run.Children[elements[0].childIdx].Text.Text = replacement
+	}
+
+	// Clear the remaining text elements
+	for i := 1; i < len(elements); i++ {
+		elem := elements[i]
+		if elem.childIdx < len(elem.run.Children) &&
+			elem.run.Children[elem.childIdx].Text != nil {
+			elem.run.Children[elem.childIdx].Text.Text = ""
+		}
+	}
+}
+
 // replaceFieldsInRun replaces fields within a single run by analyzing field patterns
 func (rd *RootDoc) replaceFieldsInRun(run *ctypes.Run, fieldMap map[string]string) int {
 	replacements := 0
-	
+
 	// Find field sequences within this run
 	fieldState := "none" // none, begin, instrText, separate, result
 	var currentFieldCode strings.Builder

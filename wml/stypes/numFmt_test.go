@@ -95,7 +95,7 @@ func TestNumFmtFromStr_InvalidValue(t *testing.T) {
 		t.Fatalf("Expected error for invalid value %s, but got none. Result: %s", input, result)
 	}
 
-	expectedError := "Invalid Numbering Format"
+	expectedError := "invalid Numbering Format: invalidValue"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error message '%s' but got '%s'", expectedError, err.Error())
 	}
@@ -151,7 +151,7 @@ func TestNumFmt_UnmarshalXMLAttr_InvalidValue(t *testing.T) {
 		t.Fatalf("Expected error for invalid value, but got none")
 	}
 
-	expectedError := "Invalid Numbering Format"
+	expectedError := "invalid Numbering Format: invalidValue"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error message '%s' but got '%s'", expectedError, err.Error())
 	}

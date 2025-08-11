@@ -15,6 +15,12 @@ func TestComplexDocRoundtrip(t *testing.T) {
 	require.NoError(t, err, "Failed to open complexdoc.docx")
 	require.NotNil(t, doc, "Document should not be nil")
 
+	replacements := doc.ReplaceFields(map[string]string{
+		"{{company}}": "my company",
+	})
+
+	require.True(t, replacements > 0)
+
 	// Save the document without any modifications
 	outputFile := "testdata/complexdoc_roundtrip_test.docx"
 	err = doc.SaveTo(outputFile)

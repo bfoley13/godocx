@@ -243,6 +243,128 @@ func createDocumentWithFieldInTable(fieldCode, resultText string) *RootDoc {
 	return doc
 }
 
+func TestRootDoc_ReplaceFields_MultiRun(t *testing.T) {
+	t.Run("Replace field spanning multiple runs", func(t *testing.T) {
+		doc := createDocumentWithMultiRunField("MERGEFIELD Company", "{{company}}")
+		
+		fieldMap := map[string]string{
+			"MERGEFIELD Company": "Acme Corp",
+		}
+		
+		result := doc.ReplaceFields(fieldMap)
+		assert.Equal(t, 1, result)
+		
+		// Verify the field result was replaced - should be in the 4th run
+		para := doc.Document.Body.Children[0].Para
+		run4 := para.ct.Children[3].Run // 4th run contains the result text
+		
+		var resultText string
+		for _, child := range run4.Children {
+			if child.Text != nil && child.Text.Text != "" {
+				resultText = child.Text.Text
+				break
+			}
+		}
+		assert.Equal(t, "Acme Corp", resultText)
+	})
+}
+
+// createDocumentWithMultiRunField creates a document with a field spanning multiple runs
+// This simulates the XML structure provided in the issue where field components are split across runs
+func createDocumentWithMultiRunField(fieldCode, resultText string) *RootDoc {
+	doc := NewRootDoc()
+	
+	// Create paragraph with field components spread across multiple runs
+	// Run 1: Begin field char with form field data
+	run1 := &ctypes.Run{
+		Children: []ctypes.RunChild{
+			{
+				FldChar: &ctypes.FieldChar{
+					FldCharType: &ctypes.GenSingleStrVal[stypes.FldCharType]{
+						Val: stypes.FldCharTypeBegin,
+					},
+				},
+			},
+		},
+	}
+	
+	// Run 2: FORMTEXT instruction
+	run2 := &ctypes.Run{
+		Children: []ctypes.RunChild{
+			{
+				Text: &ctypes.Text{
+					Text: "FORMTEXT",
+				},
+			},
+		},
+	}
+	
+	// Run 3: Separate field char and instruction text
+	run3 := &ctypes.Run{
+		Children: []ctypes.RunChild{
+			{
+				InstrText: &ctypes.Text{
+					Text: fieldCode,
+				},
+			},
+			{
+				FldChar: &ctypes.FieldChar{
+					FldCharType: &ctypes.GenSingleStrVal[stypes.FldCharType]{
+						Val: stypes.FldCharTypeSeparate,
+					},
+				},
+			},
+		},
+	}
+	
+	// Run 4: Field result text
+	run4 := &ctypes.Run{
+		Children: []ctypes.RunChild{
+			{
+				Text: &ctypes.Text{
+					Text: resultText,
+				},
+			},
+		},
+	}
+	
+	// Run 5: End field char
+	run5 := &ctypes.Run{
+		Children: []ctypes.RunChild{
+			{
+				FldChar: &ctypes.FieldChar{
+					FldCharType: &ctypes.GenSingleStrVal[stypes.FldCharType]{
+						Val: stypes.FldCharTypeEnd,
+					},
+				},
+			},
+		},
+	}
+	
+	para := &Paragraph{
+		ct: ctypes.Paragraph{
+			Children: []ctypes.ParagraphChild{
+				{Run: run1},
+				{Run: run2},
+				{Run: run3},
+				{Run: run4},
+				{Run: run5},
+			},
+		},
+	}
+	
+	doc.Document = &Document{
+		Root: doc,
+		Body: &Body{
+			Children: []DocumentChild{
+				{Para: para},
+			},
+		},
+	}
+	
+	return doc
+}
+
 func TestReplaceFieldResult(t *testing.T) {
 	t.Run("Replace single text element", func(t *testing.T) {
 		doc := NewRootDoc()
