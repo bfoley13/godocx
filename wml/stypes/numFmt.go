@@ -2,7 +2,7 @@ package stypes
 
 import (
 	"encoding/xml"
-	"errors"
+	"fmt"
 )
 
 type NumFmt string
@@ -59,6 +59,7 @@ const (
 	NumFmtNumberInDash                 NumFmt = "numberInDash"
 	NumFmtHebrew1                      NumFmt = "hebrew1"
 	NumFmtHebrew2                      NumFmt = "hebrew2"
+	NumFmtArabic                       NumFmt = "Arabic"
 	NumFmtArabicAlpha                  NumFmt = "arabicAlpha"
 	NumFmtArabicAbjad                  NumFmt = "arabicAbjad"
 	NumFmtHindiVowels                  NumFmt = "hindiVowels"
@@ -193,8 +194,10 @@ func NumFmtFromStr(value string) (NumFmt, error) {
 		return NumFmtThaiNumbers, nil
 	case "thaiCounting":
 		return NumFmtThaiCounting, nil
+	case "Arabic":
+		return NumFmtArabic, nil
 	default:
-		return "", errors.New("Invalid Numbering Format")
+		return "", fmt.Errorf("invalid Numbering Format: %s", value)
 	}
 }
 
